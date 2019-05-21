@@ -5,6 +5,10 @@
 
 import optparse
 import sys
+import binascii
+import time
+from binascii import hexlify
+from binascii import unhexlify
 """
 def descifra(cadena, llave=None):
     print "archivo; ", cadena
@@ -67,18 +71,56 @@ def cifra_descifra(cadena, llave=None):
     return cad_nueva
 
 
+def obtener_tipo(cadena):
+	temp = cadena[4:100]
+	inicio = temp.rfind("\\")
+	temp = temp[inicio+1:]
+	temp = temp[temp.find("."):]
+	temp = filter(str.isalnum, temp)
+	return temp
+
+
+def obtener_hex(cadena):
+    return hexlify(cadena).upper()
+
+
+def archivo_original(cadena,tipo):
+    cadena= (cadena[cadena.find("4D5A"):])
+    cadena= cadena.replace("F6C6F4FFFF",'')
+    cadena= cadena.replace("F6FFEFFFFF",'')
+    return cadena
+
+
+def archivo_binario(original):
+    binario = bytes(original)
+    binario = (binascii.unhexlify(binario))
+    return binario
+
+
+def escribe_binario(binario,nombre):
+	malware = open(nombre+'.malware','w+b')
+	malware.write(binario)
+	malware.close()
+
+
 def main():
     opts = addOptions()
     modo = check_opts(opts)
+    tipo = obtener_tipo(lee_archivo(opts.descifra))
     if modo == 1:
         print 'Modo 1 descifrar con llave'
         txt_plano = cifra_descifra(lee_archivo(opts.descifra),opts.key)
-        print txt_plano
+        hexa = obtener_hex(txt_plano)
+        original = archivo_original(hexa,tipo)
+        binario = archivo_binario(original)
+        escribe_binario(binario,opts.descifra)
 
     elif modo == 2:
         print 'Modo 2 descifrar sin llave, fuerza bruta'
         for x in range(256):
             txt_plano = cifra_descifra(lee_archivo(opts.descifra),x)
+            hexa = obtener_hex(txt_plano)
+            original = archivo_original(hexa,tipo)
         print txt_plano
 
     elif modo == 3:
